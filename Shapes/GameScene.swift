@@ -28,13 +28,15 @@ struct PhysicsCategory {
   static let Edge: UInt32 = 4
 }
 class GameScene: SKScene {
-  public var isAlive = 1
+  var playerColor = SKColor.blue
+  var isAlive = 1
   let scoreLabel = SKLabelNode()
   var score = 0
   let cameraNode = SKCameraNode()
   var obstacles: [SKNode] = []
   let obstacleSpacing: CGFloat = 800
-  let colors = [SKColor.yellow, SKColor.red, SKColor.blue, SKColor.purple]
+  let colors = [SKColor.yellow, SKColor.red, SKColor.blue, SKColor.magenta]
+  let colors3 = [SKColor.blue, SKColor.magenta, SKColor.yellow, SKColor.red]
   let player = SKShapeNode(circleOfRadius: 40)
   var highScore = 0
   
@@ -60,9 +62,9 @@ class GameScene: SKScene {
     addChild(cameraNode)
     camera = cameraNode
     cameraNode.position = CGPoint(x: size.width/2, y: size.height/2)
-    scoreLabel.position = CGPoint(x: -350, y: -900)
+    scoreLabel.position = CGPoint(x: -350, y: 800)
     scoreLabel.fontColor = .white
-    scoreLabel.fontSize = 150
+    scoreLabel.fontSize = 100
     scoreLabel.text = String(score)
     cameraNode.addChild(scoreLabel)
   }
@@ -72,21 +74,30 @@ class GameScene: SKScene {
     addObstacle()
     addObstacle()
   }
+  func pickPlayerColor() {
+    let choice = Int(arc4random_uniform(4))
+    playerColor = colors[choice]
+  }
   func addPlayer() {
     player.fillColor = .blue
     player.strokeColor = player.fillColor
     player.position = CGPoint(x: size.width/2, y: 200)
-    
     addChild(player)
   }
 
   func addObstacle() {
-    let choice = Int(arc4random_uniform(2))
+    let choice = Int(arc4random_uniform(5))
     switch choice {
     case 0:
       addCircleObstacle()
     case 1:
       addSquareObstacle()
+    case 2:
+      addWideCrossObstacle()
+    case 3:
+      addCrossObstacle1()
+    case 4:
+      addCrossObstacle2()
     default:
       print("something went wrong")
     }
@@ -98,14 +109,14 @@ class GameScene: SKScene {
     path.addLine(to: CGPoint(x: 0, y: -160))
     path.addArc(withCenter: CGPoint.zero,
                 radius: 160,
-                startAngle: CGFloat(3.0 * M_PI_2),
+                startAngle: CGFloat(3.0 * Double.pi/2),
                 endAngle: CGFloat(0),
                 clockwise: true)
     path.addLine(to: CGPoint(x: 200, y: 0))
     path.addArc(withCenter: CGPoint.zero,
                 radius: 200,
                 startAngle: CGFloat(0.0),
-                endAngle: CGFloat(3.0 * M_PI_2),
+                endAngle: CGFloat(3.0 * Double.pi/2),
                 clockwise: false)
     
     let obstacle = obstacleByDuplicatingPath(path, clockwise: true)
@@ -113,26 +124,25 @@ class GameScene: SKScene {
     obstacle.position = CGPoint(x: size.width/2, y: obstacleSpacing * CGFloat(obstacles.count))
     addChild(obstacle)
     //rotate
-    let rotateAction = SKAction.rotate(byAngle: 2.0 * CGFloat(M_PI), duration: 8.0)
+    let rotateAction = SKAction.rotate(byAngle: 2.0 * CGFloat(Double.pi), duration: 8.0)
     obstacle.run(SKAction.repeatForever(rotateAction))
   }
+  
   func addSquareObstacle() {
-    let path = UIBezierPath(roundedRect: CGRect(x: -200, y: -200,
-                                                width: 400, height: 40),
-                            cornerRadius: 20)
+    let path = UIBezierPath(roundedRect: CGRect(x: -200, y: -200,width: 400, height: 40),cornerRadius: 20)
     
     let obstacle = obstacleByDuplicatingPath(path, clockwise: false)
     obstacles.append(obstacle)
     obstacle.position = CGPoint(x: size.width/2, y: obstacleSpacing * CGFloat(obstacles.count))
     addChild(obstacle)
 
-    let rotateAction = SKAction.rotate(byAngle: -2.0 * CGFloat(M_PI), duration: 7.0)
+    let rotateAction = SKAction.rotate(byAngle: -2.0 * CGFloat(Double.pi), duration: 7.0)
     obstacle.run(SKAction.repeatForever(rotateAction))
   }
   func obstacleByDuplicatingPath(_ path: UIBezierPath, clockwise: Bool) -> SKNode {
     let container = SKNode()
 
-    var rotationFactor = CGFloat(M_PI_2)
+    var rotationFactor = CGFloat(Double.pi/2)
     if !clockwise {
       rotationFactor *= -1
     }
@@ -152,6 +162,65 @@ class GameScene: SKScene {
     }
     return container
   }
+  
+  func addWideCrossObstacle() {
+    let path = UIBezierPath(roundedRect: CGRect(x: 100 , y: 100,width: 200, height: 40),cornerRadius: 20)
+    let obstacle = obstacleByDuplicatingPath(path, clockwise: false)
+    obstacles.append(obstacle)
+    obstacle.position = CGPoint(x: size.width/2, y: obstacleSpacing * CGFloat(obstacles.count))
+    addChild(obstacle)
+    let rotateAction = SKAction.rotate(byAngle: -2.0 * CGFloat(Double.pi), duration: 7.0)
+    obstacle.run(SKAction.repeatForever(rotateAction))
+  }
+  func addCrossObstacle1() {
+    let path = UIBezierPath(roundedRect: CGRect(x: -10 , y: -10,width: 350, height: 40),cornerRadius: 20)
+    let obstacle = SKNode()
+    let rotationFactor = CGFloat(Double.pi/2)
+    for i in 0...3 {
+      let section = SKShapeNode(path: path.cgPath)
+      section.fillColor = colors[i]
+      section.strokeColor = colors[i]
+      section.zRotation = rotationFactor * CGFloat(i);
+      let sectionBody = SKPhysicsBody(polygonFrom: path.cgPath)
+      sectionBody.categoryBitMask = PhysicsCategory.Obstacle
+      sectionBody.collisionBitMask = 0
+      sectionBody.contactTestBitMask = PhysicsCategory.Player
+      sectionBody.affectedByGravity = false
+      section.physicsBody = sectionBody
+      obstacle.addChild(section)
+    }
+    obstacles.append(obstacle)
+    obstacle.position = CGPoint(x: size.width - (size.width/3), y: obstacleSpacing * CGFloat(obstacles.count))
+    addChild(obstacle)
+    let rotateAction = SKAction.rotate(byAngle: -2.0 * CGFloat(Double.pi), duration: 7.0)
+    obstacle.run(SKAction.repeatForever(rotateAction))
+    //-----------
+  }
+  func addCrossObstacle2() {
+    let path = UIBezierPath(roundedRect: CGRect(x: -10 , y: -10,width: 350, height: 40),cornerRadius: 20)
+    let obstacle = SKNode()
+    let rotationFactor = CGFloat(Double.pi/2)
+    for i in 0...3 {
+      let section = SKShapeNode(path: path.cgPath)
+      section.fillColor = colors3[i]
+      section.strokeColor = colors3[i]
+      section.zRotation = rotationFactor * CGFloat(i);
+      let sectionBody = SKPhysicsBody(polygonFrom: path.cgPath)
+      sectionBody.categoryBitMask = PhysicsCategory.Obstacle
+      sectionBody.collisionBitMask = 0
+      sectionBody.contactTestBitMask = PhysicsCategory.Player
+      sectionBody.affectedByGravity = false
+      section.physicsBody = sectionBody
+      obstacle.addChild(section)
+    }
+    obstacles.append(obstacle)
+    let counter = obstacles.count
+    obstacle.position = CGPoint(x: size.width/3, y: obstacleSpacing * CGFloat(obstacles.count))
+    addChild(obstacle)
+    let rotateAction = SKAction.rotate(byAngle: -2.0 * CGFloat(Double.pi), duration: 7.0)
+    obstacle.run(SKAction.repeatForever(rotateAction))
+  }
+  
   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     player.physicsBody?.velocity.dy = 800.0
   }
