@@ -28,6 +28,7 @@ struct PhysicsCategory {
   static let Edge: UInt32 = 4
 }
 class GameScene: SKScene {
+  var coinsPerObstacle = 10
   var playerColor = SKColor.blue
   var isAlive = 1
   let scoreLabel = SKLabelNode()
@@ -39,8 +40,10 @@ class GameScene: SKScene {
   let colors3 = [SKColor.blue, SKColor.magenta, SKColor.yellow, SKColor.red]
   let player = SKShapeNode(circleOfRadius: 40)
   var highScore = 0
+  var coins = 0
   
   override func didMove(to view: SKView) {
+    coins = loadInt(desName: "coins")
     highScore = loadInt(desName: "highScoreSaved")
     isAlive = 1
     setupPlayerAndObstacles()
@@ -79,9 +82,24 @@ class GameScene: SKScene {
     playerColor = colors[choice]
   }
   func addPlayer() {
-    player.fillColor = .blue
-    player.strokeColor = player.fillColor
+    pickPlayerColor()
+    player.strokeColor = playerColor
+    player.lineWidth = 7
+    player.fillColor = .white
     player.position = CGPoint(x: size.width/2, y: 200)
+    // TODO: Textur -------------------------------------
+    if loadInt(desName: "currentSkin")==1{
+      let texture = SKTexture(imageNamed: "ballBlue")
+      player.fillTexture = texture
+    }
+    if loadInt(desName: "currentSkin") == 2{
+      let texture = SKTexture(imageNamed: "ballGreen")
+      player.fillTexture = texture
+    }
+    else{
+      player.fillColor = player.strokeColor
+    }
+    // TODO: --------------------------------------------
     addChild(player)
   }
 
@@ -214,7 +232,7 @@ class GameScene: SKScene {
       obstacle.addChild(section)
     }
     obstacles.append(obstacle)
-    let counter = obstacles.count
+   // let counter = obstacles.count
     obstacle.position = CGPoint(x: size.width/3, y: obstacleSpacing * CGFloat(obstacles.count))
     addChild(obstacle)
     let rotateAction = SKAction.rotate(byAngle: -2.0 * CGFloat(Double.pi), duration: 7.0)
@@ -229,6 +247,7 @@ class GameScene: SKScene {
     if player.position.y > obstacleSpacing * CGFloat(obstacles.count - 2) {
       print("score")
       score += 1
+      coins += coinsPerObstacle
       scoreLabel.text = String(score)
       addObstacle()
     }
@@ -264,6 +283,7 @@ class GameScene: SKScene {
     //segue TODO: Hier muss Menu eingefügt werden
     isAlive = 0
     saveInt(nameSafe: isAlive, desName: "isAlive")
+    saveInt(nameSafe: coins, desName: "coins")
   }
   
   func  loadInt(desName: String) -> Int{
@@ -288,7 +308,7 @@ extension GameScene: SKPhysicsContactDelegate {
   func didBegin(_ contact: SKPhysicsContact) {
     
     if let nodeA = contact.bodyA.node as? SKShapeNode, let nodeB = contact.bodyB.node as? SKShapeNode {
-      if nodeA.fillColor != nodeB.fillColor {
+      if nodeA.fillColor != nodeB.strokeColor {
         dieAndRestart()
       }
     }
