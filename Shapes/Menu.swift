@@ -12,6 +12,8 @@ class Menu: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+      highScoreTLabel.backgroundColor = UIColor(patternImage: UIImage(named: "highScore")!)
+      startButton.backgroundColor = UIColor(patternImage: UIImage(named: "startButtonImage")!)
         highScoreLabel.text = String(loadInt(desName: "highScoreSaved"))
         versionLabel.text = "App v." + getVersion()
     }
@@ -40,4 +42,6 @@ class Menu: UIViewController {
   
   @IBOutlet weak var versionLabel: UILabel!
   
+  @IBOutlet weak var startButton: UIButton!
+  @IBOutlet weak var highScoreTLabel: UILabel!
 }
