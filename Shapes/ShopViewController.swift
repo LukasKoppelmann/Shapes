@@ -21,7 +21,7 @@ class ShopViewController: UIViewController {
       if loadInt(desName: "itemOneUnlocked") == 1{
         // TODO: Change font size
         //  itemOneButton.titleLabel?.font = UIFont(name: "System", size: 12)!
-        itemOneButton.setTitle("Verwenden", for: .normal)
+        itemOneButton.setTitle("select", for: .normal)
         itemOneButton.tintColor = .green
         itemOnePrice.text = ""
       }
@@ -33,7 +33,7 @@ class ShopViewController: UIViewController {
       if loadInt(desName: "itemTwoUnlocked") == 1{
         // TODO: Change font size
         //  itemOneButton.titleLabel?.font = UIFont(name: "System", size: 12)!
-        itemTwoButton.setTitle("Verwenden", for: .normal)
+        itemTwoButton.setTitle("select", for: .normal)
         itemTwoButton.tintColor = .green
         itemTwoLabel.text = ""
       }
@@ -60,13 +60,12 @@ class ShopViewController: UIViewController {
         saveInt(nameSafe: itemOneUnlocked, desName: "itemOneUnlocked")
         let currentSkin = 1
         saveInt(nameSafe: currentSkin, desName: "currentSkin")
-        itemOneButton.tintColor = .green
-        itemOnePrice.text = ""
-      if loadInt(desName: "currentSkin") == 1{
+       // itemOneButton.tintColor = .gray
         itemOneButton.isEnabled = false
-        itemOneButton.tintColor = .gray
         itemOneButton.setTitle("selected", for: .disabled)
-        }
+        itemOneButton.setTitle("select", for: .normal)
+        itemOnePrice.text = ""
+        itemTwoButton.isEnabled = true
       }
     }
     else if loadInt(desName: "itemOneUnlocked") == 1{
@@ -75,10 +74,14 @@ class ShopViewController: UIViewController {
       itemOneButton.isEnabled = false
       itemOneButton.tintColor = .gray
       itemOneButton.setTitle("selected", for: .disabled)
+      itemOneButton.setTitle("select", for: .normal)
+      itemTwoButton.isEnabled = true
+      itemTwoButton.tintColor = .green
     }
   }
   @IBAction func itemTwoButtonP(_ sender: Any) {
     var coins = loadInt(desName: "coins")
+    //buy skin2
     if loadInt(desName: "itemTwoUnlocked") != 1{
     if  coins >= priceItemTwo{
         coins = coins - priceItemTwo
@@ -88,24 +91,24 @@ class ShopViewController: UIViewController {
         saveInt(nameSafe: itemTwoUnlocked, desName: "itemTwoUnlocked")
         let currentSkin = 2
         saveInt(nameSafe: currentSkin, desName: "currentSkin")
-        itemTwoButton.tintColor = .green
+        //itemTwoButton.tintColor = .gray
+        itemTwoButton.isEnabled = false
+        itemTwoButton.setTitle("selected", for: .disabled)
+        itemTwoButton.setTitle("select", for: .normal)
         itemTwoLabel.text = ""
-      if loadInt(desName: "currentSkin") == 2{
+        itemOneButton.isEnabled = true
+      }
+    } //end of buy skin
+    //
+    else if loadInt(desName: "itemTwoUnlocked") == 1{
+        let currentSkin = 2
+        saveInt(nameSafe: currentSkin, desName: "currentSkin")
         itemTwoButton.isEnabled = false
         itemTwoButton.tintColor = .gray
         itemTwoButton.setTitle("selected", for: .disabled)
-        }
-      }
-      else{
-        itemTwoLabel.text = "ZU WENIG"
-      }
-    }
-    else{
-      let currentSkin = 2
-      saveInt(nameSafe: currentSkin, desName: "currentSkin")
-      itemTwoButton.isEnabled = false
-      itemTwoButton.tintColor = .gray
-      itemTwoButton.setTitle("selected", for: .disabled)
+        itemOneButton.isEnabled = true
+        itemOneButton.tintColor = .green
+        itemOneButton.setTitle("select", for: .normal)
     }
   }
   
