@@ -22,12 +22,13 @@
 
 import UIKit
 import SpriteKit
+import AVFoundation
+
+var player: AVAudioPlayer?
 
 class GameViewController: UIViewController {
-  
   override func viewDidLoad() {
     super.viewDidLoad()
-    
     let scene = GameScene(size: CGSize(width: 1536, height: 2048))
     let skView = self.view as! SKView
     skView.showsFPS = true
@@ -35,12 +36,16 @@ class GameViewController: UIViewController {
     skView.ignoresSiblingOrder = true
     scene.scaleMode = .aspectFill
     skView.presentScene(scene)
+    if loadInt(desName: "isAlive") != 1{
+      performSegue(withIdentifier: "failedSegue", sender: self)
+    }
    /* if loadInt(desName: "isAlive") == 0{
       let story = UIStoryboard(name: "Menu", bundle: nil)
       let controller = story.instantiateViewController(withIdentifier: "failedSegue")as! Menu
       self.present(controller, animated: true, completion: nil)
     } */
   }
+
   func  loadInt(desName: String) -> Int{
       let defaults = UserDefaults.standard
       if let savedValue = defaults.object(forKey: desName) as? Int{
@@ -49,7 +54,6 @@ class GameViewController: UIViewController {
       }
       return 0
   }
-  
   override var prefersStatusBarHidden: Bool {
     return true
   }

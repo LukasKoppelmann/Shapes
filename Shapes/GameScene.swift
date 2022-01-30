@@ -22,27 +22,53 @@
 
 import SpriteKit
 import UIKit
+import AVFoundation
+
 struct PhysicsCategory {
   static let Player: UInt32 = 1
   static let Obstacle: UInt32 = 2
   static let Edge: UInt32 = 4
 }
 class GameScene: SKScene {
+  var coinsPerObstacle = 200
   var playerColor = SKColor.blue
   var isAlive = 1
   let scoreLabel = SKLabelNode()
   var score = 0
+  var soundPlayer: AVAudioPlayer?
   let cameraNode = SKCameraNode()
+  let coinLabel = SKLabelNode()  //coin
   var obstacles: [SKNode] = []
   let obstacleSpacing: CGFloat = 800
+  let soundBackground = SKAction.playSoundFileNamed("backgroundMusic.mp3", waitForCompletion: false)
+  let soundDeath = SKAction.playSoundFileNamed("hit.wav", waitForCompletion: false)
   let colors = [SKColor.yellow, SKColor.red, SKColor.blue, SKColor.magenta]
   let colors3 = [SKColor.blue, SKColor.magenta, SKColor.yellow, SKColor.red]
   let player = SKShapeNode(circleOfRadius: 40)
   var highScore = 0
+  var coins = 0
+  
+  func playSound() {
+    let path = Bundle.main.path(forResource: "backgroundMusic.mp3", ofType:nil)!
+    let url = URL(fileURLWithPath: path)
+
+    do {
+        soundPlayer = try AVAudioPlayer(contentsOf: url)
+        soundPlayer?.play()
+        soundPlayer?.numberOfLoops = 99999
+    } catch {
+        // couldn't load file :(
+    }
+  }
   
   override func didMove(to view: SKView) {
+    saveInt(nameSafe: isAlive, desName: "isAlive")
+    coins = loadInt(desName: "coins")
     highScore = loadInt(desName: "highScoreSaved")
     isAlive = 1
+    if loadInt(desName: "soundOn") == 1{
+      playSound()
+    }
     setupPlayerAndObstacles()
     let playerBody = SKPhysicsBody(circleOfRadius: 30)
     playerBody.mass = 1.5
@@ -57,16 +83,22 @@ class GameScene: SKScene {
     ledgeBody.categoryBitMask = PhysicsCategory.Edge
     ledge.physicsBody = ledgeBody
     addChild(ledge)
-    physicsWorld.gravity.dy = -22
+    physicsWorld.gravity.dy = -20 //22 standart
     physicsWorld.contactDelegate = self
     addChild(cameraNode)
     camera = cameraNode
     cameraNode.position = CGPoint(x: size.width/2, y: size.height/2)
-    scoreLabel.position = CGPoint(x: -350, y: 800)
+    scoreLabel.position = CGPoint(x: -300, y: 800)
     scoreLabel.fontColor = .white
-    scoreLabel.fontSize = 100
-    scoreLabel.text = String(score)
+    scoreLabel.fontSize = 70
+    coinLabel.position = CGPoint(x: 250, y: 800)
+    coinLabel.fontColor = .white
+    coinLabel.fontSize = 70
+    scoreLabel.text = "Score: " + String(score)
+    coinLabel.text = "Coins: " + String(loadInt(desName: "coins"))
+    
     cameraNode.addChild(scoreLabel)
+    cameraNode.addChild(coinLabel)
   }
   func setupPlayerAndObstacles() {
     addPlayer()
@@ -79,9 +111,24 @@ class GameScene: SKScene {
     playerColor = colors[choice]
   }
   func addPlayer() {
-    player.fillColor = .blue
-    player.strokeColor = player.fillColor
+    pickPlayerColor()
+    player.strokeColor = playerColor
+    player.lineWidth = 7
+    player.fillColor = .white
     player.position = CGPoint(x: size.width/2, y: 200)
+    // TODO: Textur -------------------------------------
+    if loadInt(desName: "currentSkin")==1{
+      let texture = SKTexture(imageNamed: "ballBlue")
+      player.fillTexture = texture
+    }
+    if loadInt(desName: "currentSkin") == 2{
+      let texture = SKTexture(imageNamed: "ballGreen")
+      player.fillTexture = texture
+    }
+    else{
+      player.fillColor = player.strokeColor
+    }
+    // TODO: --------------------------------------------
     addChild(player)
   }
 
@@ -214,7 +261,7 @@ class GameScene: SKScene {
       obstacle.addChild(section)
     }
     obstacles.append(obstacle)
-    let counter = obstacles.count
+   // let counter = obstacles.count
     obstacle.position = CGPoint(x: size.width/3, y: obstacleSpacing * CGFloat(obstacles.count))
     addChild(obstacle)
     let rotateAction = SKAction.rotate(byAngle: -2.0 * CGFloat(Double.pi), duration: 7.0)
@@ -229,7 +276,9 @@ class GameScene: SKScene {
     if player.position.y > obstacleSpacing * CGFloat(obstacles.count - 2) {
       print("score")
       score += 1
-      scoreLabel.text = String(score)
+      coins += coinsPerObstacle
+      scoreLabel.text = "Score: " + String(score)
+      coinLabel.text = "Coins: " + String(coins)
       addObstacle()
     }
     
@@ -260,10 +309,14 @@ class GameScene: SKScene {
       saveInt(nameSafe: highScore, desName: "highScoreSaved")
     }
     score = 0
-    scoreLabel.text = String(score)
+    scoreLabel.text = "Score: " + String(score)
     //segue TODO: Hier muss Menu eingefügt werden
     isAlive = 0
     saveInt(nameSafe: isAlive, desName: "isAlive")
+    saveInt(nameSafe: coins, desName: "coins")
+    if loadInt(desName: "soundOn") == 1{
+      player.run(soundDeath)
+    }
   }
   
   func  loadInt(desName: String) -> Int{
@@ -281,6 +334,7 @@ class GameScene: SKScene {
       defaults.set(saveValue, forKey: desName)
       print("Saved '\(saveValue)'")
     }
+  
   }
 
 extension GameScene: SKPhysicsContactDelegate {
@@ -288,7 +342,7 @@ extension GameScene: SKPhysicsContactDelegate {
   func didBegin(_ contact: SKPhysicsContact) {
     
     if let nodeA = contact.bodyA.node as? SKShapeNode, let nodeB = contact.bodyB.node as? SKShapeNode {
-      if nodeA.fillColor != nodeB.fillColor {
+      if nodeA.fillColor != nodeB.strokeColor {
         dieAndRestart()
       }
     }
